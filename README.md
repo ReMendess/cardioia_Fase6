@@ -1,4 +1,4 @@
-# AIReport Gen-Experience
+# CardioIA - Fase 6
 
 <p align="center">
   <a href="https://www.fiap.com.br/"><img src="assets/logo-fiap.png" alt="FIAP" width="30%"></a>

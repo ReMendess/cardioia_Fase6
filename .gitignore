@@ -1,0 +1,23 @@
+# CardioIA - Fase 6
+# Minimizamos o escopo do .gitignore: o material oficial da aula (data/*.py) e os
+# artefatos do modelo (models/*.pkl, models/*.json) DEVEM ser versionados.
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter / nbconvert
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# Segredos (nunca versionar chaves de API)
+.env
+.env.*
+*.key
+
+# Logs locais
+*.log

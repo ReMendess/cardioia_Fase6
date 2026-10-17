@@ -1,0 +1,23 @@
+# CardioIA - Fase 6
+# ---------------------------------------------------------------------------
+# Versoes verificadas localmente em Python 3.13.5 (tambem compativeis com o
+# Google Colab, que ja traz essas bibliotecas pre-instaladas).
+# ---------------------------------------------------------------------------
+
+# Etapa 1 - notebook de Machine Learning (notebooks/treinamento_modelo.ipynb)
+numpy==2.2.6
+pandas==2.3.2
+scikit-learn==1.8.0
+joblib==1.5.3
+
+# Etapa 2 - orquestracao multiagente (OpenAI Agents SDK) e validacao de dados
+# Descomentar quando a implementacao dos agentes for autorizada:
+# openai-agents==0.0.0   # fixar a versao usada na entrega
+# pydantic==2.11.10
+
+# Ferramentas opcionais para executar/validar o notebook fora do Colab
+# nbformat==5.10.4
+# nbconvert==7.16.6
+
+# Etapa 2 - testes automatizados (pip install --user pytest, sem venv no projeto)
+pytest==9.1.1

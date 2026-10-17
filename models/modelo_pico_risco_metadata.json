@@ -1,0 +1,133 @@
+{
+  "nome_do_modelo": "Random Forest",
+  "classe_do_estimador": "RandomForestClassifier",
+  "variavel_alvo": "pico_risco",
+  "features": [
+    "idade_media",
+    "carga_sistema",
+    "tempo_espera",
+    "fc_media",
+    "spo2_media",
+    "pa_sistolica",
+    "temperatura",
+    "densidade_eventos",
+    "eventos_24h",
+    "disponibilidade_recursos"
+  ],
+  "colunas_derivadas_do_alvo_excluidas": [
+    "risk_score"
+  ],
+  "criterio_de_escolha": "maior recall da classe pico_risco=1 no conjunto de teste; desempate por acuracia; depois por interpretabilidade",
+  "parametros_do_estimador": {
+    "tipo": "RandomForestClassifier",
+    "parametros": {
+      "random_state": 42,
+      "n_estimators": 300,
+      "n_jobs": -1,
+      "max_depth": null
+    }
+  },
+  "limiar_de_decisao": 0.5,
+  "limiar_de_decisao_observacao": "Limiar operacional do prototipo (0.5). NAO e um limite clinico validado.",
+  "semente": 42,
+  "tamanho_do_teste": 0.2,
+  "split_estratificado": true,
+  "amostras_total": 5000,
+  "amostras_treino": 4000,
+  "amostras_teste": 1000,
+  "metricas_no_teste": {
+    "Regressao Logistica": {
+      "acuracia": 0.816,
+      "matriz_confusao": [
+        [
+          669,
+          65
+        ],
+        [
+          119,
+          147
+        ]
+      ],
+      "recall_classe_1": 0.5526315789473685,
+      "precisao_classe_1": 0.6933962264150944,
+      "f1_classe_1": 0.6150627615062761,
+      "falsos_negativos": 119,
+      "falsos_positivos": 65,
+      "macro_f1": 0.7470846002012327
+    },
+    "Random Forest": {
+      "acuracia": 0.999,
+      "matriz_confusao": [
+        [
+          734,
+          0
+        ],
+        [
+          1,
+          265
+        ]
+      ],
+      "recall_classe_1": 0.9962406015037594,
+      "precisao_classe_1": 1.0,
+      "f1_classe_1": 0.9981167608286252,
+      "falsos_negativos": 1,
+      "falsos_positivos": 0,
+      "macro_f1": 0.9987180128173079
+    }
+  },
+  "acuracia_da_regra_deterministica_no_teste": 1.0,
+  "origem_da_base": "arquivo oficial data/base_dados.py",
+  "sha256_da_base_usada": "89f3a65f6e49b1100062f090b7819eacac4bc501a840a3172baf9c8291454275",
+  "faixas_esperadas": {
+    "idade_media": [
+      18.0,
+      90.0
+    ],
+    "carga_sistema": [
+      30.003697885260777,
+      99.97712436694646
+    ],
+    "tempo_espera": [
+      5.0,
+      113.57820956016427
+    ],
+    "fc_media": [
+      50.0,
+      150.0
+    ],
+    "spo2_media": [
+      83.43087401227821,
+      100.0
+    ],
+    "pa_sistolica": [
+      80.0,
+      198.8324900239561
+    ],
+    "temperatura": [
+      10.0,
+      40.0
+    ],
+    "densidade_eventos": [
+      0.0,
+      13.0
+    ],
+    "eventos_24h": [
+      0.0,
+      9.0
+    ],
+    "disponibilidade_recursos": [
+      20.03548928826642,
+      99.98937604023
+    ]
+  },
+  "versoes": {
+    "python": "3.13.5",
+    "numpy": "2.2.6",
+    "pandas": "2.3.2",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3"
+  },
+  "gerado_por": "src/cardioia/ml/train.py",
+  "pasta_modelos": "C:\\Users\\Pichau\\OneDrive\\Área de Trabalho\\cardioia_Fase6\\models",
+  "aviso": "Base sintetica gerada por regras (np.random.seed(42)). Nao ha validacao clinica: os limiares sao de projeto e nao representam conduta medica."
+}

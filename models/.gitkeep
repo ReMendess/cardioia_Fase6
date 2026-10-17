@@ -1,0 +1,4 @@
+# Mantem a pasta models/ versionada mesmo quando os artefatos ainda nao existem.
+# Artefatos gerados pelo notebook:
+#   models/modelo_pico_risco.pkl
+#   models/modelo_pico_risco_metadata.json
