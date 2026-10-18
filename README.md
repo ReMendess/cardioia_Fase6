@@ -19,7 +19,7 @@
 
 ## Vídeo
 
-- **Fase 6:**
+- **Fase 6:** https://youtu.be/v-__IQXEDMA
 
 ---
 
