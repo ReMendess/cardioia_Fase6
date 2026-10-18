@@ -252,6 +252,12 @@ diagnóstico/erros; `agente_final` presente quando concluído; `pico_risco_previ
 `0.9962406015037594` aparece com precisão total. O arredondamento existe apenas nas saídas de
 apresentação (texto da CLI, narrativa).
 
+**Apresentação × contrato (decisão do autor):** no resumo textual do **modo simulado** as seções
+`LIMITACOES`, `AVISOS` e `ERROS` não são impressas (`SECOES_OCULTAS_NO_MODO_SIMULADO`); a regra vive
+em `RespostaDaExecucao.mostra_ressalvas` e é de **apresentação**: os dados permanecem em
+`limitacoes`, `avisos` e `erros` (logo, no `--json`) e as seções voltam quando o modo é `real` **ou
+quando a execução não conclui** — falha nunca fica sem motivo visível.
+
 ## 10. Tratamento de falhas e determinação do status
 
 ```mermaid
@@ -283,10 +289,12 @@ Princípios:
 1. **Nunca** transformar falha em sucesso: sem predição validada, `diagnostico` é `null` e o status
    não é `CONCLUIDO`;
 2. **Nunca** treinar silenciosamente: sem artefato, a execução para e instrui o comando correto;
-3. Exceções (`ModeloNaoEncontradoError`, `PacienteInvalidoError`, `AgentsException` e falhas
-   inesperadas) são capturadas **na fronteira** e convertidas em `ERRO` com a mensagem original
-   preservada em `erros`;
-4. A CLI traduz o status em código de saída (`0`, `1`, `2`), e os motivos vão para `stderr`.
+3. Exceções (`ModeloNaoEncontradoError`, `ModeloIncompativelError`, `PacienteInvalidoError`,
+   `AgentsException` e falhas inesperadas) são capturadas **na fronteira** e convertidas em `ERRO`
+   com a mensagem original preservada em `erros` — inclusive quando o artefato existe mas não pode
+   ser desserializado neste ambiente (artefato de outra versão do `scikit-learn`);
+4. A CLI traduz o status em código de saída (`0`, `1`, `2`), e os motivos vão para `stderr`
+   (no modo simulado concluído o `stderr` fica limpo; ver §9, regra de apresentação).
 
 ## 11. Passo a passo da execução
 
@@ -320,6 +328,8 @@ reproduz), não são hipóteses.
 | 7 | `pydantic` do SDK (≥2.12.2) × `gradio` (<2.12) | dependências mutuamente insatisfazíveis | **documentado** com alternativas; **não** declarado resolvido |
 | 8 | Custo de API impedindo exercitar o fluxo | testes de integração caros/limitados | `modelo_simulado` determinístico + suíte que não usa API |
 | 9 | Cota da conta OpenAI | `HTTP 429 / insufficient_quota` no modo real | falha **propagada como `ERRO`** e registrada como limitação (nunca como sucesso) |
+| 10 | `.pkl` de `scikit-learn` 1.2.2 aberto com 1.8.0 | `ValueError: node array ... incompatible dtype` subindo cru; pipeline terminava em `INCOMPLETO` com a mensagem enganosa "predicao ausente no contexto" | capturar a desserialização em `ModeloIncompativelError` (subclasse de `ErroDePrevisao`), citando a versão do metadata e o comando de treino; artefato regravado no ambiente local (SHA-256 idêntico ao documentado) |
+| 11 | Excesso de ruído na demonstração | `LIMITACOES`/`AVISOS`/`ERROS` repetidos em toda execução simulada | supressão **apenas** na apresentação do modo simulado concluído, mantendo contrato, JSON e o caso de falha (`mostra_ressalvas`) |
 
 ## 13. Decisões de projeto e justificativas
 
@@ -333,6 +343,7 @@ reproduz), não são hipóteses.
 | Resposta final montada em Python | o contrato é validado **antes** de sair do processo |
 | `tracing_disabled=True` | não enviar dados do caso para a plataforma de observabilidade |
 | Constantes em `config.py` | eliminar duplicação de nomes de artefato entre `train` e `predict` |
+| Texto enxuto no modo simulado | a demonstração não repete ressalvas fixas; o contrato (JSON) preserva tudo e falha continua explicada |
 | `modelo_simulado` determinístico | exercitar SDK, handoffs e tools sem custo e sem rede |
 | Protocolos lidos do arquivo oficial | manter a camada determinística fiel ao material da aula, com teste de coerência |
 

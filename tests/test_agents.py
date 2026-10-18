@@ -198,6 +198,28 @@ def test_tool_do_modelo_sem_artefato_registra_erro_sem_derrubar(paciente_da_aula
     assert list(tmp_path.iterdir()) == []  # nada foi criado nem treinado
 
 
+def test_tool_do_modelo_com_artefato_incompativel_registra_erro(
+    paciente_da_aula, tmp_path, monkeypatch
+):
+    """Artefato de outra versão do scikit-learn: erro explícito, sem predição pela metade."""
+
+    def falhar(*_args, **_kwargs):
+        raise predict.ModeloIncompativelError("artefato treinado com outra versao do scikit-learn")
+
+    monkeypatch.setattr(predict, "prever_pico_risco", falhar)
+    agentes = orchestrator.construir_agentes()
+    tool = _achar_tool(agentes.analista_de_risco, "consultar_modelo_de_risco")
+    contexto = _contexto(paciente_da_aula, pasta_modelos=tmp_path)
+
+    saida = _invocar_tool(tool, contexto)
+
+    assert "FALHA" in saida
+    assert "ModeloIncompativelError" in saida
+    assert contexto.predicao is None
+    assert any("falha de inferencia" in erro for erro in contexto.erros)
+    assert any(not passo.sucesso for passo in contexto.passos)
+
+
 def test_tool_do_modelo_registra_avisos_de_faixa(
     modelo_temporario, paciente_da_aula, raiz_do_projeto
 ):

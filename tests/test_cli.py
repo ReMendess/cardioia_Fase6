@@ -116,6 +116,43 @@ def test_json_e_textual_coincidem_no_status(capsys, argumentos_do_modelo):
     assert f"status={dados['status']}" in textual
 
 
+# --------------------------------------------------------------------------- #
+# Apresentação no modo simulado (LIMITACOES/AVISOS/ERROS fora do texto)
+# --------------------------------------------------------------------------- #
+
+
+def test_saida_simulada_omite_limitacoes_avisos_e_erros(capsys, argumentos_do_modelo):
+    """Modo simulado concluído: o texto sai enxuto e o ``stderr`` fica limpo."""
+    codigo, saida, erros = _executar_inprocess([*argumentos_do_modelo], capsys)
+    assert codigo == 0, erros
+    assert "PREDICAO" in saida
+    assert "PROTOCOLOS APLICAVEIS (4)" in saida
+    for secao in risk_result.SECOES_OCULTAS_NO_MODO_SIMULADO:
+        assert secao not in saida, f"secao impressa no modo simulado: {secao}"
+    assert erros.strip() == ""
+
+
+def test_json_continua_completo_mesmo_com_o_texto_enxuto(capsys, argumentos_do_modelo):
+    """A supressão é só de apresentação: o contrato (JSON) segue íntegro e auditável."""
+    codigo, saida, erros = _executar_inprocess(["--json", *argumentos_do_modelo], capsys)
+    assert codigo == 0, erros
+    dados = json.loads(saida)
+    assert len(dados["limitacoes"]) == len(risk_result.LIMITACOES_PADRAO)
+    assert dados["avisos"]
+    assert dados["passos"] and dados["handoffs_realizados"]
+
+
+def test_falha_no_modo_simulado_mostra_os_erros(capsys, argumentos_do_modelo):
+    """Exceção da regra: execução que NÃO conclui continua explicando a falha (saída 1)."""
+    codigo, saida, erros = _executar_inprocess(
+        ["--max-turnos", "1", *argumentos_do_modelo], capsys
+    )
+    assert codigo == 1
+    assert "ERROS" in saida
+    assert "MaxTurnsExceeded" in saida  # o motivo aparece no texto...
+    assert "MaxTurnsExceeded" in erros  # ...e também no stderr
+
+
 def test_paciente_por_arquivo_json(capsys, argumentos_do_modelo, paciente_sem_risco, tmp_path):
     caminho = tmp_path / "paciente.json"
     caminho.write_text(json.dumps(paciente_sem_risco), encoding="utf-8")

@@ -42,6 +42,12 @@ LIMITACOES_PADRAO: tuple[str, ...] = (
     "profissional de saude.",
 )
 
+#: Seções do resumo textual **suprimidas no modo simulado** (decisão do autor para a
+#: demonstração). A supressão é apenas de apresentação: o contrato Python (`limitacoes`,
+#: `avisos`, `erros`) segue íntegro — inclusive no JSON — e as seções reaparecem sempre que
+#: a execução **não** conclui, porque falha não pode ficar sem explicação.
+SECOES_OCULTAS_NO_MODO_SIMULADO: tuple[str, ...] = ("LIMITACOES", "AVISOS", "ERROS")
+
 
 class StatusDaExecucao(str, Enum):
     """Estado real do pipeline — nunca "sucesso" por omissão."""
@@ -216,12 +222,34 @@ class RespostaDaExecucao(ModeloDoContrato):
             StatusDaExecucao.CONCLUIDO_COM_RESSALVAS,
         )
 
+    @property
+    def mostra_ressalvas(self) -> bool:
+        """``True`` quando o resumo textual deve imprimir ``SECOES_OCULTAS_NO_MODO_SIMULADO``.
+
+        Regra de apresentação (não altera o contrato nem o código de saída):
+
+        - **modo real**: imprime sempre (as ressalvas são parte do diagnóstico da execução);
+        - **modo simulado**: omite ``LIMITACOES``/``AVISOS``/``ERROS`` — *exceto* quando a
+          execução não concluiu (``status`` ``ERRO``/``INCOMPLETO``), caso em que as seções
+          aparecem de novo: uma falha nunca fica sem motivo visível.
+
+        Os dados continuam em ``limitacoes``, ``avisos`` e ``erros`` (e no JSON), prontos para
+        auditoria; o que muda é só o texto impresso pela CLI.
+        """
+        return self.modo is ModoDeExecucao.REAL or not self.concluida
+
     def como_dicionario(self) -> dict[str, Any]:
         """Serializa em tipos nativos (JSON-safe), preservando a probabilidade crua."""
         return self.model_dump(mode="json")
 
     def resumo_textual(self) -> str:
-        """Resumo legível para a CLI (aqui sim a probabilidade é arredondada)."""
+        """Resumo legível para a CLI (aqui sim a probabilidade é arredondada).
+
+        Seções condicionais: ``LIMITACOES``, ``AVISOS`` e ``ERROS`` só são impressas quando
+        :attr:`mostra_ressalvas` é ``True`` — isto é, no **modo real** ou quando a execução
+        **não** concluiu. No modo simulado bem-sucedido o texto sai enxuto (ver
+        ``SECOES_OCULTAS_NO_MODO_SIMULADO``); o conteúdo continua no contrato e no JSON.
+        """
         linhas = [
             "=" * 78,
             "CardioIA - Fase 6 | Resposta do pipeline multiagente",
@@ -273,11 +301,12 @@ class RespostaDaExecucao(ModeloDoContrato):
                 linhas.append(
                     f"    {passo.ordem}. [{passo.tipo.value}/{marca}] {passo.agente}: {passo.detalhe}"
                 )
-        if self.erros:
+        if self.erros and self.mostra_ressalvas:
             linhas += ["", "  ERROS"] + [f"    - {item}" for item in self.erros]
-        if self.avisos:
+        if self.avisos and self.mostra_ressalvas:
             linhas += ["", "  AVISOS"] + [f"    - {item}" for item in self.avisos]
-        linhas += ["", "  LIMITACOES"] + [f"    - {item}" for item in self.limitacoes]
+        if self.mostra_ressalvas:
+            linhas += ["", "  LIMITACOES"] + [f"    - {item}" for item in self.limitacoes]
         return "\n".join(linhas)
 
 
@@ -295,6 +324,7 @@ __all__ = [
     "CLASSE_POSITIVA",
     "LIMITACOES_PADRAO",
     "ROTULOS",
+    "SECOES_OCULTAS_NO_MODO_SIMULADO",
     "DiagnosticoDaPredicao",
     "IndicadorDeterministico",
     "ModoDeExecucao",

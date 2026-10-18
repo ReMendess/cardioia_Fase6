@@ -12,9 +12,9 @@
 
 ---
 
-## 1. Problema e objetivo
+## Solução
 
-Ambientes de urgência precisam **priorizar** pacientes diante de recursos limitados. Na versão
+Em ambientes de urgência precisam **priorizar** pacientes diante de poucos recursos . Na versão
 acadêmica proposta, a decisão de "pico de risco" deve ser: (i) **calculada** de forma reprodutível,
 (ii) **explicada** com as regras que a originaram e (iii) **organizada** em uma resposta legível.
 
@@ -83,10 +83,11 @@ falso negativo tem `risk_score = 2`, isto é, está exatamente na fronteira do c
 
 | Evidência | Resultado |
 |---|---|
-| Suíte automatizada (`python -m pytest tests -q`) | **281 testes aprovados, 3 pulados** (20 s, sem usar a API) |
+| Suíte automatizada (`python -m pytest tests -q`) | **290 testes aprovados, 3 pulados** (~21 s, sem usar a API) |
 | Pipeline com o SDK real e modelo simulado | Handoffs, tools, contexto tipado e contrato exercitados |
 | Execução completa com LLM real | ❌ **não ocorreu** — a conta respondeu `HTTP 429 / insufficient_quota` |
 | Reprodutibilidade do artefato | `.pkl` com SHA-256 idêntico antes/depois da correção de caminho |
+| Compatibilidade do artefato | `.pkl` de outra versão do `scikit-learn` é recusado com `ModeloIncompativelError` — erro explícito, nunca sucesso aparente |
 | Portabilidade | metadata sem caminho absoluto; testes executam de outros diretórios |
 
 **Declaração honesta de escopo:** a *condução dos handoffs por um LLM real* **não está comprovada**

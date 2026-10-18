@@ -74,6 +74,38 @@ def test_previsao_sem_artefato_nao_treina_silenciosamente(tmp_path, paciente_da_
     assert list(tmp_path.iterdir()) == []  # nada foi criado
 
 
+def test_artefato_ilegivel_gera_erro_explicito(tmp_path, paciente_da_aula):
+    """Regressão real (18/10): ``.pkl`` de scikit-learn 1.2.2 aberto com 1.8.0.
+
+    O ``ValueError`` do pickle subia cru e o pipeline terminava em ``INCOMPLETO`` com a
+    mensagem errada. Agora vira ``ModeloIncompativelError`` (subclasse de ``ErroDePrevisao``),
+    com a instrução de treino e a versão registrada no metadata.
+    """
+    (tmp_path / predict.NOME_ARQUIVO_MODELO).write_bytes(b"isto nao e um pickle valido")
+    (tmp_path / predict.NOME_ARQUIVO_METADADOS).write_text(
+        json.dumps({"versoes": {"scikit-learn": "1.2.2"}}), encoding="utf-8"
+    )
+
+    with pytest.raises(predict.ModeloIncompativelError) as erro:
+        predict.carregar_modelo(pasta_modelos=tmp_path)
+    mensagem = str(erro.value)
+    assert isinstance(erro.value, predict.ErroDePrevisao)
+    assert predict.COMANDO_DE_TREINO in mensagem
+    assert "1.2.2" in mensagem  # versão do treino, quando o metadata existe
+
+    # a previsão também falha de forma explícita (nunca devolve resultado pela metade)
+    with pytest.raises(predict.ErroDePrevisao):
+        predict.prever_pico_risco(paciente_da_aula, pasta_modelos=tmp_path)
+
+
+def test_artefato_ilegivel_sem_metadata_ainda_explica_o_problema(tmp_path):
+    """Sem metadata para consultar, a mensagem continua útil (não depende do JSON)."""
+    (tmp_path / predict.NOME_ARQUIVO_MODELO).write_bytes(b"lixo")
+    with pytest.raises(predict.ModeloIncompativelError) as erro:
+        predict.carregar_modelo(pasta_modelos=tmp_path)
+    assert "scikit-learn" in str(erro.value)
+
+
 # --------------------------------------------------------------------------- #
 # Previsão de um caso válido
 # --------------------------------------------------------------------------- #

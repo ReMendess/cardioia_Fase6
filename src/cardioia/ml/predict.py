@@ -81,6 +81,17 @@ class PacienteInvalidoError(ErroDePrevisao):
     """O caso recebido viola o contrato de entrada do modelo."""
 
 
+class ModeloIncompativelError(ErroDePrevisao):
+    """O artefato existe, mas não pôde ser desserializado neste ambiente.
+
+    Caso real observado: ``.pkl`` treinado com ``scikit-learn`` 1.2.2 e carregado com 1.8.0 —
+    o pickle guarda a estrutura interna das árvores (``node array``) e a versão nova recusa o
+    ``dtype`` antigo (``ValueError`` do ``sklearn.tree._tree``). Sem este tratamento, o erro
+    subia como ``ValueError`` cru e o pipeline terminava em ``INCOMPLETO`` com a mensagem
+    errada ("predicao ausente no contexto"), escondendo a causa real.
+    """
+
+
 #: Mapa reverso das correções documentadas do material oficial: nome esperado ->
 #: grafia usada no arquivo da aula. Serve para produzir mensagens de erro úteis.
 _ALIAS_DE_ENTRADA: Mapping[str, str] = {
@@ -142,6 +153,8 @@ def carregar_modelo(
 
     Raises:
         ModeloNaoEncontradoError: se o artefato não existir. **Nada é treinado aqui.**
+        ModeloIncompativelError: se o arquivo existir mas não puder ser desserializado
+            (artefato corrompido ou treinado em outra versão incompatível do scikit-learn).
     """
     destino = _resolver_caminho(caminho, pasta_modelos, raiz, NOME_ARQUIVO_MODELO)
     if not destino.is_file():
@@ -152,7 +165,34 @@ def carregar_modelo(
         )
     if not hasattr(joblib.load, "__call__"):  # pragma: no cover - salvaguarda defensiva
         raise ErroDePrevisao("joblib indisponivel para carregar o modelo.")
-    return joblib.load(destino)
+    try:
+        return joblib.load(destino)
+    except Exception as erro:
+        raise ModeloIncompativelError(
+            f"O artefato '{destino}' nao pode ser lido neste ambiente "
+            f"({type(erro).__name__}: {erro}). "
+            f"{_detalhe_das_versoes(destino)}"
+            "Pickles de scikit-learn carregam a estrutura interna das arvores e podem ser "
+            "recusados por outra versao da biblioteca. Gere o artefato novamente com:\n"
+            f"    {COMANDO_DE_TREINO}"
+        ) from erro
+
+
+def _detalhe_das_versoes(caminho_do_modelo: Path) -> str:
+    """Menciona (best-effort) a versão de ``scikit-learn`` registrada no metadata do treino.
+
+    Serve só para a mensagem de erro: explica a incompatibilidade em vez de deixar o usuário
+    adivinhar. Qualquer falha na leitura do JSON é ignorada de propósito.
+    """
+    try:
+        metadados = carregar_metadados(caminho_do_modelo.with_name(NOME_ARQUIVO_METADADOS))
+        versoes = metadados.get("versoes")
+        usada_no_treino = versoes.get("scikit-learn") if isinstance(versoes, Mapping) else None
+    except Exception:  # pragma: no cover - mensagem auxiliar nunca derruba o fluxo
+        return ""
+    if usada_no_treino:
+        return f"scikit-learn usado no treino (metadata): {usada_no_treino}. "
+    return ""
 
 
 def features_do_modelo(

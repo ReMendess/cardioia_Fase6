@@ -11,6 +11,10 @@ Uso (a partir da raiz do repositório):
 Comportamento em falha: **nunca** treina um modelo ausente, nunca inventa predição. Sai com
 código 1 (e com o erro descrito) quando o pipeline não conclui.
 
+Apresentação no modo simulado: as seções ``LIMITACOES``, ``AVISOS`` e ``ERROS`` não são
+impressas (decisão do autor para a demonstração); elas reaparecem no modo ``real`` e sempre que
+a execução não conclui. O ``--json`` traz o contrato completo em qualquer modo.
+
 Esta etapa não implementa API web nem interface gráfica (não são requisitos da atividade).
 """
 
@@ -183,7 +187,10 @@ def executar(argumentos: argparse.Namespace) -> int:
     else:
         print(resposta.resumo_textual())
 
-    if resposta.erros:
+    # Apresentacao das ressalvas: no modo simulado o texto sai enxuto — LIMITACOES, AVISOS e
+    # ERROS nao sao impressos (decisao do autor para a demonstracao). O `--json` continua
+    # completo e uma execucao que NAO concluiu sempre mostra os erros: falha nunca fica muda.
+    if resposta.erros and resposta.mostra_ressalvas:
         print("", file=sys.stderr)
         for erro in resposta.erros:
             print(f"[erro] {erro}", file=sys.stderr)

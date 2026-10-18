@@ -349,18 +349,54 @@ def test_resposta_e_serializavel_em_json():
     assert recarregado["protocolos"][0]["texto_oficial"].startswith("Se carga do sistema")
 
 
-def test_resumo_textual_mostra_predicao_protocolos_e_limitacoes():
+def test_resumo_textual_do_modo_simulado_omite_ressalvas():
+    """No modo simulado o texto sai enxuto: sem LIMITACOES, AVISOS e ERROS (decisão do autor)."""
     resposta = rr.RespostaDaExecucao(
         id_execucao="a" * 8,
         status=rr.StatusDaExecucao.CONCLUIDO,
         diagnostico=rr.DiagnosticoDaPredicao(**_diagnostico()),
         protocolos=[rr.ProtocoloAplicavel(**_protocolo())],
         justificativas=["justificativa objetiva"],
+        avisos=["aviso qualquer do modo simulado"],
     )
     resumo = resposta.resumo_textual()
     assert "0.9900" in resumo  # arredondamento apenas na apresentação
     assert "PROTOCOLOS APLICAVEIS (1)" in resumo
     assert "JUSTIFICATIVAS" in resumo
+    for secao in rr.SECOES_OCULTAS_NO_MODO_SIMULADO:
+        assert secao not in resumo, f"secao impressa no modo simulado: {secao}"
+    # A supressão é só de apresentação: o conteúdo segue no contrato (auditoria/JSON).
+    assert list(resposta.limitacoes) == list(rr.LIMITACOES_PADRAO)
+    assert resposta.avisos == ["aviso qualquer do modo simulado"]
+
+
+def test_resumo_textual_do_modo_real_mostra_ressalvas():
+    """No modo real as três seções continuam sendo impressas."""
+    resposta = rr.RespostaDaExecucao(
+        id_execucao="a" * 8,
+        status=rr.StatusDaExecucao.CONCLUIDO_COM_RESSALVAS,
+        modo=rr.ModoDeExecucao.REAL,
+        diagnostico=rr.DiagnosticoDaPredicao(**_diagnostico()),
+        avisos=["narrativa citou numero divergente"],
+        erros=["falha registrada com predicao valida"],
+    )
+    assert resposta.mostra_ressalvas is True
+    resumo = resposta.resumo_textual()
+    assert "AVISOS" in resumo
+    assert "ERROS" in resumo
+    assert "LIMITACOES" in resumo
+
+
+def test_resumo_textual_de_falha_no_modo_simulado_mostra_os_erros():
+    """Exceção da regra: execução que não concluiu nunca esconde o motivo da falha."""
+    resposta = rr.RespostaDaExecucao(
+        id_execucao="a" * 8, status=rr.StatusDaExecucao.ERRO, erros=["motivo real da falha"]
+    )
+    assert resposta.modo is rr.ModoDeExecucao.SIMULADO
+    assert resposta.mostra_ressalvas is True
+    resumo = resposta.resumo_textual()
+    assert "ERROS" in resumo
+    assert "motivo real da falha" in resumo
     assert "LIMITACOES" in resumo
 
 

@@ -164,10 +164,26 @@ def test_contrato_final_e_serializavel(modelo_temporario, paciente_da_aula, raiz
 
 
 def test_resumo_textual_tem_o_essencial(modelo_temporario, paciente_da_aula, raiz_do_projeto):
-    resumo = _executar(paciente_da_aula, modelo_temporario, raiz_do_projeto).resumo_textual()
+    resposta = _executar(paciente_da_aula, modelo_temporario, raiz_do_projeto)
+    resumo = resposta.resumo_textual()
     assert "PREDICAO" in resumo
     assert "PROTOCOLOS APLICAVEIS (4)" in resumo
     assert "HANDOFFS REALIZADOS" in resumo
+    # Modo simulado concluído: as ressalvas ficam no contrato, não no texto (decisão do autor).
+    for secao in risk_result.SECOES_OCULTAS_NO_MODO_SIMULADO:
+        assert secao not in resumo, f"secao impressa no modo simulado: {secao}"
+    assert resposta.mostra_ressalvas is False
+    assert list(resposta.limitacoes) == list(risk_result.LIMITACOES_PADRAO)
+    assert resposta.avisos  # tudo continua auditável no contrato/JSON
+
+
+def test_resumo_textual_de_falha_mostra_os_erros(modelo_temporario, paciente_da_aula, raiz_do_projeto):
+    """A regra de apresentação nunca esconde falha: sem conclusão, as seções voltam."""
+    resposta = _executar(paciente_da_aula, modelo_temporario, raiz_do_projeto, max_turnos=1)
+    assert resposta.concluida is False
+    resumo = resposta.resumo_textual()
+    assert "ERROS" in resumo
+    assert "MaxTurnsExceeded" in resumo
     assert "LIMITACOES" in resumo
 
 
