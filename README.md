@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <strong>Sistema preditivo multiagente para análise de risco</strong><br>
-  scikit-learn (modelo supervisionado) + base de protocolos determinística + OpenAI Agents SDK
+  <strong>Sistema Multiagentes para análise de risco</strong><br>
+  scikit-learn + base de protocolos + OpenAI Agents SDK
 </p>
 
 ---
@@ -39,8 +39,7 @@ Solução:
    altera limite**;
 3. **Multiagente**: quatro agentes com responsabilidades separadas, *handoffs*, *tools*
    que consultam o modelo e os protocolos, contexto tipado compartilhado e um contrato de saída;
-4. **Interface de execução**: Recebe um paciente e devolve a resposta estruturada
-   (texto legível ou JSON).
+4. **Interface de execução**: Recebe um paciente e devolve a resposta estruturada.
 
 
 Algumas observações:
@@ -53,6 +52,7 @@ Algumas observações:
 
 ## 2. Base de Dados e Treinamento
 
+Usada uma base de dados sintética, criada com base na estrutura indicada no enunciado dessa fase.
 
 `data/base_dados.py` gera 5.000 registros com 10 variáveis e constrói o alvo por regra:
 
@@ -63,10 +63,15 @@ pico_risco = 1 se risk_score >= 2, senão 0
 ```
 
 Distribuição: **1.329 (26,58%)** positivos e 3.671 (73,42%) negativos.
-`risk_score` **nunca** é usado como variável de entrada (seria vazamento do alvo) — a checagem é
-feita por `assert` no notebook e em `dataset.separar_features_e_alvo`.
+`risk_score` **nunca** é usado como variável de entrada
+
+<img src="/assets/inspecao_base.png" widht="80%">
 
 ### Modelo
+
+Treinado dois modelos ao mesmo tempo: LogisticRegression e RandomForestClassifier
+
+<img src="/assets/modelos_treinados.png" widht="80%">
 
 - **features**: as 10 colunas originais, na ordem do arquivo oficial;
 - **split**: 80/20 **estratificado**, `random_state=42` (4.000 treino / 1.000 teste);
@@ -80,7 +85,12 @@ feita por `assert` no notebook e em `dataset.separar_features_e_alvo`.
   probabilidade é devolvida **crua** — o arredondamento ocorre só na apresentação.
 
 
-### Resultados do Machine Learning 
+### Avaliação dos Modelos
+
+O modelo que apresentou as melhores métricas foi o RandomForestClassifier, como esperado. É um modelo muito forte para base dee dados mais simples e não tão complexas, como nesse caso
+
+<img src="/assets/modelo_escolhido.png" widht="80%">
+
 
 Base: 5.000 registros · 10 variáveis · alvo com 26,58% de positivos.
 Split: 80/20 estratificado, semente 42 → **4.000 treino / 1.000 teste** (266 positivos no teste).
@@ -95,18 +105,29 @@ Fonte: `models/modelo_pico_risco_metadata.json` e o notebook executado. O crité
 (maior *recall* da classe 1) escolheu o **Random Forest**; o único falso negativo tem
 `risk_score = 2`, exatamente na fronteira do corte do rótulo.
 
+Métricas gerais:
+
+<img src="/assets/metricas.png" widht="80%">
+
 
 ## 4. Agentes e Protocolos
 
-| # | Agente | Responsabilidade | O que ele **não** faz |
-|---|---|---|---|
-| 1 | **Analista de Risco** | chamar a *tool* que consulta o modelo salvo e devolver a probabilidade real | não estima/arredonda probabilidade; não treina |
-| 2 | **Especialista em Protocolos** | chamar a *tool* que aplica as 10 regras oficiais | não cria regra, não altera limite, não sugere protocolo fora da base |
-| 3 | **Planejador de Resposta** | consolidar narrativa, justificativas e pontos de atenção (saída estruturada) | não recalcula nada; não introduz números |
-| 4 | **Orquestrador** | validar a entrada, exigir o modelo, iniciar o run, montar/validar o contrato e registrar status/erros | não responde ao usuário por conta própria |
+No core da solução temos os quatro agentes, com suas tools e suas regras de handoff.
 
-As instruções completas de cada agente estão nos respectivos módulos em
+
+| # | Agente | Responsabilidade |
+|---|---|---
+| 1 | **Analista de Risco** | chamar a *tool* que consulta o modelo salvo e devolver a probabilidade real |
+| 2 | **Especialista em Protocolos** | chamar a *tool* que aplica as 10 regras oficiais |
+| 3 | **Planejador de Resposta** | consolidar narrativa, justificativas e pontos de atenção (saída estruturada) |
+| 4 | **Orquestrador** | validar a entrada, exigir o modelo, iniciar o run, montar/validar o contrato e registrar status/erros |
+
+As instruções completas de cada agente estão nos em
 [`src/cardioia/agents/`](src/cardioia/agents/).
+
+<img src="/assets/Agente1.png" widht="80%">
+
+<img src="/assets/Agente4.png" widht="80%">
 
 
 **Handoffs (reais, do SDK):**
@@ -115,16 +136,17 @@ As instruções completas de cada agente estão nos respectivos módulos em
 Orquestrador ──▶ Analista de Risco ──▶ Especialista em Protocolos ──▶ Planejador de Resposta
 ```
 
-O SDK os expõe ao LLM como ferramentas `transfer_to_<agente>` e registra cada passo em
-`RunHooks.on_handoff` — o pipeline guarda a trilha observável em `handoffs_realizados` e
-`passos`.
 
 **Tools (Python, executadas pelo SDK):**
+
+Criamos duas tools principais
 
 | Tool | Agente | Chama | Devolve ao modelo |
 |---|---|---|---|
 | `consultar_modelo_de_risco` | Analista de Risco | `cardioia.ml.predict.prever_pico_risco` | resumo textual com probabilidade, classe, modelo e limiar |
 | `consultar_protocolos` | Especialista em Protocolos | `cardioia.knowledge.protocols.avaliar_protocolos_seguro` | protocolos aplicáveis **com** condição satisfeita, valor observado e origem |
+
+<img src="/assets/tool_consulta.png" widht="80%">
 
 
 ### Protocolos (determinísticos)
