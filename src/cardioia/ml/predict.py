@@ -40,21 +40,28 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from ..config import (
+    COMANDO_DE_TREINO,
+    LIMIAR_DE_DECISAO,
+    NOME_ARQUIVO_METADADOS,
+    NOME_ARQUIVO_MODELO,
+    PASTA_MODELOS_PADRAO,
+)
 from . import dataset
 from .dataset import COLUNAS_PREDITORAS, VARIAVEL_ALVO
 
-#: Limiar de decisão do protótipo. ATENÇÃO: é um parâmetro operacional (0.5), escolhido
-#: para coincidir com a decisão padrão de um classificador binário. **Não** é um limite
-#: clínico validado e não foi calibrado com dados reais.
-LIMIAR_DE_DECISAO = 0.5
+# Reexportados de ``cardioia.config`` (fonte única); mantidos aqui porque são parte da
+# interface pública já usada pelo notebook, pelos testes e pelo CLI.
+__all__ = [
+    "COMANDO_DE_TREINO",
+    "LIMIAR_DE_DECISAO",
+    "NOME_ARQUIVO_METADADOS",
+    "NOME_ARQUIVO_MODELO",
+    "PASTA_MODELOS_PADRAO",
+]
 
 CLASSE_POSITIVA = 1
 ROTULOS: Mapping[int, str] = {0: "sem_pico_de_risco", 1: "pico_de_risco"}
-
-NOME_ARQUIVO_MODELO = "modelo_pico_risco.pkl"
-NOME_ARQUIVO_METADADOS = "modelo_pico_risco_metadata.json"
-PASTA_MODELOS_PADRAO = "models"
-COMANDO_DE_TREINO = "python -m src.cardioia.ml.train"
 
 AVISO_DE_USO = (
     "Modelo treinado em dados SINTETICOS, sem validacao clinica. Este resultado nao e "

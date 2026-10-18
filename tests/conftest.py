@@ -19,7 +19,8 @@ import pytest
 RAIZ_DO_PROJETO = Path(__file__).resolve().parents[1]
 PASTA_SRC = RAIZ_DO_PROJETO / "src"
 if str(PASTA_SRC) not in sys.path:
-    sys.path.insert(0, str(PASTA_SRC))
+    # append (não insert): ver a justificativa no conftest.py da raiz.
+    sys.path.append(str(PASTA_SRC))
 
 from cardioia.ml import dataset, train  # noqa: E402 - depende do sys.path acima
 
@@ -51,6 +52,42 @@ def amostra_pequena(base_oficial):
 def paciente_da_aula(raiz_do_projeto: Path) -> dict[str, float]:
     """Caso de simulação lido de ``data/novo_paciente.py`` (coluna já normalizada)."""
     return dataset.carregar_caso_do_paciente_da_aula(raiz=raiz_do_projeto)
+
+
+@pytest.fixture(scope="session")
+def paciente_sem_risco() -> dict[str, float]:
+    """Paciente que **não** satisfaz nenhum dos 10 protocolos oficiais nem indicador do rótulo.
+
+    Os valores ficam deliberadamente longe dos limiares (nenhum é exatamente o limiar).
+    """
+    return {
+        "idade_media": 40.0,
+        "carga_sistema": 50.0,
+        "tempo_espera": 20.0,
+        "fc_media": 75.0,
+        "spo2_media": 98.0,
+        "pa_sistolica": 120.0,
+        "temperatura": 24.0,
+        "densidade_eventos": 2.0,
+        "eventos_24h": 1.0,
+        "disponibilidade_recursos": 80.0,
+    }
+
+
+@pytest.fixture(scope="session")
+def limiares_dos_protocolos() -> dict[str, tuple[str, float]]:
+    """Limiares oficiais dos protocolos: ``coluna -> (operador, limiar)``."""
+    return {
+        "spo2_media": ("<", 88.0),
+        "carga_sistema": (">", 85.0),
+        "fc_media": (">", 120.0),
+        "eventos_24h": (">", 5.0),
+        "disponibilidade_recursos": ("<", 30.0),
+        "tempo_espera": (">", 90.0),
+        "temperatura": (">", 38.0),
+        "densidade_eventos": (">", 6.0),
+        "pa_sistolica": ("<", 90.0),
+    }
 
 
 @pytest.fixture(scope="session")

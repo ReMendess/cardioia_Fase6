@@ -17,6 +17,7 @@ env/
 # Segredos (nunca versionar chaves de API)
 .env
 .env.*
+!.env.example
 *.key
 
 # Logs locais

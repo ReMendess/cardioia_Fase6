@@ -50,10 +50,10 @@
       ],
       "recall_classe_1": 0.5526315789473685,
       "precisao_classe_1": 0.6933962264150944,
-      "f1_classe_1": 0.6150627615062761,
+      "f1_classe_1": 0.6150627615062763,
       "falsos_negativos": 119,
       "falsos_positivos": 65,
-      "macro_f1": 0.7470846002012327
+      "macro_f1": 0.7470846002012328
     },
     "Random Forest": {
       "acuracia": 0.999,
@@ -121,13 +121,13 @@
     ]
   },
   "versoes": {
-    "python": "3.13.5",
-    "numpy": "2.2.6",
-    "pandas": "2.3.2",
-    "scikit-learn": "1.8.0",
-    "joblib": "1.5.3"
+    "python": "3.11.7",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "scikit-learn": "1.2.2",
+    "joblib": "1.2.0"
   },
   "gerado_por": "src/cardioia/ml/train.py",
-  "pasta_modelos": "C:\\Users\\Pichau\\OneDrive\\Área de Trabalho\\cardioia_Fase6\\models",
+  "pasta_modelos": "models",
   "aviso": "Base sintetica gerada por regras (np.random.seed(42)). Nao ha validacao clinica: os limiares sao de projeto e nao representam conduta medica."
 }

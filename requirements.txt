@@ -10,14 +10,59 @@ pandas==2.3.2
 scikit-learn==1.8.0
 joblib==1.5.3
 
-# Etapa 2 - orquestracao multiagente (OpenAI Agents SDK) e validacao de dados
-# Descomentar quando a implementacao dos agentes for autorizada:
-# openai-agents==0.0.0   # fixar a versao usada na entrega
-# pydantic==2.11.10
+# Etapa 2 - testes automatizados (pip install --user pytest, sem venv no projeto)
+pytest==9.1.1
+
+# ---------------------------------------------------------------------------
+# Etapa 3 - sistema multiagente (OpenAI Agents SDK)
+# ---------------------------------------------------------------------------
+# A versao foi escolhida pela compatibilidade REAL com este ambiente:
+#   0.18.1 exige openai>=2.36.0,<3  -> compativel com openai 2.38.0 (instalado)
+#   0.18.2+ exige openai>=2.45.0    -> exigiria subir o openai
+#   0.22+   exige openai>=3.0.0     -> mudanca de major
+openai-agents==0.18.1
+openai==2.38.0
+# pydantic: o SDK exige >=2.12.2; o ambiente ficou em 2.14.1 apos a instalacao.
+pydantic==2.14.1
+
+# Dependencias transitivas do SDK (extras de MCP) fixadas para NAO quebrar o
+# fastapi/gradio que ja existiam no user-site deste ambiente:
+#   sse-starlette 3.x exige starlette>=0.49.1, e fastapi 0.119.0 exige <0.49.0.
+# Nenhuma delas e usada diretamente pelo CardioIA; sao MCP/HTTP do SDK.
+starlette==0.48.0
+sse-starlette==2.3.5
 
 # Ferramentas opcionais para executar/validar o notebook fora do Colab
 # nbformat==5.10.4
 # nbconvert==7.16.6
 
-# Etapa 2 - testes automatizados (pip install --user pytest, sem venv no projeto)
-pytest==9.1.1
+# ---------------------------------------------------------------------------
+# Etapa 4 - documentacao da entrega (NAO e dependencia de execucao)
+# ---------------------------------------------------------------------------
+# As versoes acima foram reconferidas nesta etapa:
+#   python 3.13.5 | pandas 2.3.2 | numpy 2.2.6 | scikit-learn 1.8.0
+#   joblib 1.5.3 | pytest 9.1.1 | openai 2.38.0 | openai-agents 0.18.1
+#   pydantic 2.14.1 | starlette 0.48.0 | sse-starlette 2.3.5
+#
+# Para gerar os PDFs (docs/relatorio_tecnico.pdf e docs/arquitetura_multiagente.pdf)
+# foram usadas ferramentas locais, sem adicionar dependencia ao projeto:
+#   - Python-Markdown 3.9  (Markdown -> HTML)
+#   - PyMuPDF 1.27.2.3     (verificacao: paginas e render PNG)
+#   - Microsoft Edge headless (--print-to-pdf)  [nao e dependencia Python]
+#   - @mermaid-js/mermaid-cli 12.0.0 via npx, instalado em %TEMP% (fora do repositorio),
+#     com PUPPETEER_SKIP_DOWNLOAD=true reaproveitando o Edge instalado.
+#   - pip install markdown pymupdf   # se quiser reproduzir localmente
+#
+# ---------------------------------------------------------------------------
+# CONFLITO DE AMBIENTE CONHECIDO (documentado, NAO resolvido)
+# ---------------------------------------------------------------------------
+# gradio 5.49.1 declara "pydantic<2.12", enquanto openai-agents 0.18.1 exige
+# "pydantic>=2.12.2". As duas restricoes sao mutuamente insatisfaziveis no mesmo
+# ambiente. Neste ambiente o CardioIA fixa pydantic 2.14.1; o gradio (de outro
+# projeto) fica fora da faixa que ele proprio declara, embora "import gradio"
+# continue funcionando.
+#
+# Alternativas verificadas:
+#   1) openai-agents==0.4.2 (exige pydantic>=2.10 e openai>=2.2,<3) - SDK bem mais antigo;
+#   2) um ambiente virtual (venv) por projeto - recomendado para uso continuado.
+# ---------------------------------------------------------------------------

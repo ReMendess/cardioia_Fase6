@@ -33,14 +33,25 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from ..config import (
+    LIMIAR_DE_DECISAO,
+    NOME_ARQUIVO_METADADOS,
+    NOME_ARQUIVO_MODELO,
+    N_ESTIMATORS_PADRAO,
+    PASTA_MODELOS_PADRAO,
+)
 from . import dataset, evaluate
 from .dataset import COLUNAS_PREDITORAS, SEMENTE, TAMANHO_TESTE, VARIAVEL_ALVO
-from .predict import LIMIAR_DE_DECISAO
 
-NOME_ARQUIVO_MODELO = "modelo_pico_risco.pkl"
-NOME_ARQUIVO_METADADOS = "modelo_pico_risco_metadata.json"
-PASTA_MODELOS_PADRAO = "models"
-N_ESTIMATORS_PADRAO = 300
+# Reexportados de ``cardioia.config`` (fonte única) — mantidos na interface pública já
+# consumida pela CLI, pelo notebook e pelos testes.
+__all__ = [
+    "LIMIAR_DE_DECISAO",
+    "NOME_ARQUIVO_METADADOS",
+    "NOME_ARQUIVO_MODELO",
+    "N_ESTIMATORS_PADRAO",
+    "PASTA_MODELOS_PADRAO",
+]
 
 NOME_MODELO_INTERPRETAVEL = "Regressao Logistica"
 NOME_MODELO_NAO_LINEAR = "Random Forest"
@@ -255,6 +266,23 @@ def resolver_pasta_modelos(pasta_modelos: str | Path | None = None, raiz: str | 
     return destino
 
 
+def _caminho_portatil(destino: Path, raiz: str | Path | None = None) -> str:
+    """Representação **portátil** da pasta de artefatos para o metadata.
+
+    O JSON versionado não deve carregar caminho absoluto da máquina do autor. Preferimos o
+    caminho relativo à raiz do projeto (ex.: ``models``); se a pasta estiver fora do projeto
+    (caso de diretórios temporários nos testes), gravamos apenas o nome da pasta.
+    """
+    raiz_resolvida = Path(raiz) if raiz is not None else dataset.localizar_raiz_do_projeto()
+    if raiz_resolvida is not None:
+        try:
+            relativo = destino.resolve().relative_to(Path(raiz_resolvida).resolve())
+            return relativo.as_posix() or "."
+        except ValueError:
+            pass  # pasta fora do projeto: cai no nome simples abaixo
+    return destino.name
+
+
 def salvar_artefatos(
     resultado: Mapping[str, Any],
     pasta_modelos: str | Path | None = None,
@@ -275,7 +303,7 @@ def salvar_artefatos(
     caminho_metadados = destino / NOME_ARQUIVO_METADADOS
 
     metadados = dict(resultado["metadados"])
-    metadados["pasta_modelos"] = str(destino)
+    metadados["pasta_modelos"] = _caminho_portatil(destino, raiz=raiz)
 
     joblib.dump(resultado["modelo_escolhido"], caminho_modelo)
     caminho_metadados.write_text(
